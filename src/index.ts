@@ -1,34 +1,8 @@
-// import express from 'express';
-// import dbConfig from './config/db';
-// import dotenv from "dotenv";
-// import router from "./routes";
-
-// const app = express();
-
-// // Middlewares
-// dotenv.config();
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// const PORT = process.env.PORT;
-// const URI = process.env.MONGODB_URI;
-
-// // dbConfig.connect(URI);
-// if (!URI) {
-//   console.error("MONGODB_URI is not defined in environment variables");
-//   process.exit(1);
-// } else {
-//   dbConfig.connect(URI);
-// }
-// router(app);
-
-// app.listen(PORT, () => {
-//   console.log(`Server is running on PORT: ${PORT}`);
-// });
 import express from 'express';
 import dotenv from "dotenv";
 import dbConfig from './config/db';
-import Router from './routes'; // Adjust the path as necessary
+import Router from './routes';
+//import "./types/express"
 
 dotenv.config();
 
@@ -54,3 +28,31 @@ router.initializeRoutes();
 app.listen(PORT, () => {
   console.log(`Server is running on PORT: ${PORT}`);
 });
+
+//https://www.google.com/search?q=server-1anb&sourceid=chrome&ie=UTF-8
+// interface authRequest extends Request {
+//   user: IUser;
+// }
+/////////////////////////////////////////
+// import { Request, Response, Router } from 'express';
+
+// const router = Router();
+
+// interface HandlerRequest extends Request {
+//     query: {
+//         foo: string
+//     }
+// }
+
+// function getHandler(request: HandlerRequest, response: Response) {
+//   const {query: {foo}} = request;
+
+//   if (foo) {
+//     // Do something
+//   } else {
+//     // Otherwise...
+//   }       
+// }
+
+// router.route('/')
+//   .get(getHandler)

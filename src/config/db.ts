@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 class DatabaseConfig {
   public async connect(URI: string) {
-    console.log("hi");
     const options: object = {};
     try {
       await mongoose.connect(URI, options);

@@ -113,7 +113,7 @@ class UserController {
     }
   }
 
-  public async deleteAccount(req: any, res: Response, next: NextFunction) {
+  public async deleteAccount(req:any, res: Response, next: NextFunction) {
     try {
       if (!req.body.is_delete) {
         throw { msg: "Invalid Type" };
@@ -139,7 +139,6 @@ class UserController {
       res.status(500).json({ status: false, msg: "Something went wrong", err });
     }
   }
-
   public async logout(req: any, res: Response, next: NextFunction) {
     try {
       const user = await User.findOne({

@@ -1,29 +1,3 @@
-// import { Schema, model } from "mongoose";
-
-// const tokenSchema = new Schema(
-//   {
-//     tokenable_type: {
-//       type: String,
-//       required: true,
-//     },
-//     tokenable_id: {
-//       type: String,
-//       required: true,
-//     },
-//     name: {
-//       type: String,
-//       required: true,
-//     },
-//     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
-//     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
-//     deletedBy: { type: Schema.Types.ObjectId, ref: "User" },
-//   },
-//   { timestamps: true }
-// );
-
-// const Token = model("token", tokenSchema);
-
-// export default Token;
 import { Schema, model, Document } from "mongoose";
 
 interface IToken extends Document {
