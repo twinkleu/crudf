@@ -1,28 +1,56 @@
+// import express from 'express';
+// import dbConfig from './config/db';
+// import dotenv from "dotenv";
+// import router from "./routes";
+
+// const app = express();
+
+// // Middlewares
+// dotenv.config();
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// const PORT = process.env.PORT;
+// const URI = process.env.MONGODB_URI;
+
+// // dbConfig.connect(URI);
+// if (!URI) {
+//   console.error("MONGODB_URI is not defined in environment variables");
+//   process.exit(1);
+// } else {
+//   dbConfig.connect(URI);
+// }
+// router(app);
+
+// app.listen(PORT, () => {
+//   console.log(`Server is running on PORT: ${PORT}`);
+// });
 import express from 'express';
-import dbConfig from './config/db';
 import dotenv from "dotenv";
-import router from "./routes"
+import dbConfig from './config/db';
+import Router from './routes'; // Adjust the path as necessary
+
+dotenv.config();
 
 const app = express();
 
-//Middlewares
-dotenv.config();
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const PORT = process.env.PORT
-const URI = process.env.MONGODB_URI
+const PORT = process.env.PORT;
+const URI = process.env.MONGODB_URI;
 
+if (URI) {
+  dbConfig.connect(URI);
+} else {
+  console.error('MONGODB_URI is not defined in environment variables');
+  process.exit(1);
+}
 
-dbConfig(URI)
-router(app)
+const router = new Router(app);
+router.initializeRoutes();
 
 app.listen(PORT, () => {
   console.log(`Server is running on PORT: ${PORT}`);
 });
-
-
-
-
-//https://github.com/ahmadjoya/typescript-express-mongoose-starter/blob/main/src/server.ts
-//https://github.com/nmanikiran/rest-api-node-typescript

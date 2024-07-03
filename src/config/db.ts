@@ -1,20 +1,16 @@
 import mongoose from "mongoose";
 
-
-const dbConfig = async (LOCAL_URL: any) => {
+class DatabaseConfig {
+  public async connect(URI: string) {
     console.log("hi");
-  const options: object = {};
-  const URI: string = LOCAL_URL;
-  await mongoose
-    .connect(URI, options)
-    .then(() =>
-      console.log(
-       "MongoDB Connected"
-      )
-    )
-    .catch((err: any) => {
-      console.log(err);
-    });
-};
+    const options: object = {};
+    try {
+      await mongoose.connect(URI, options);
+      console.log("MongoDB Connected");
+    } catch (err) {
+      console.error("MongoDB connection error:", err);
+    }
+  }
+}
 
-export default dbConfig;
+export default new DatabaseConfig();

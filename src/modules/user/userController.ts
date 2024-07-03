@@ -1,279 +1,162 @@
 import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import User from "../../models/user";
-import {
-  checkPassword,
-  createToken,
-  deleteToken,
-  hashPassword,
-  toLowerCase,
-} from "../../helpers/helper";
+import Helper from "../../helpers/helper";
 
-const register = async (req: Request, res: Response, next: NextFunction) => {
-try{
-     const {email,password} = req.body;
-     if (!email || ! password){
-        return res.status(400).json({success:false, message:"Email and Password is required"})
-     }
-     const user = await User.findOne({
-        "email.value":await toLowerCase(req.body.email)
-     })
-     if(user){
-        return res.status(500).json({success:false, message:"User is already registered"})
-     } else{
-      await User.create({
-        "email.value":await toLowerCase(req.body.email),
-         password:await hashPassword(req.body.password)
-      })
-      .then((data)=>{
-        if(!data){
-          throw{
-            msg:"Data Not Found"
-          }
-        }else{
-          return res.status(200).json({success:true,msg:"User registered successfully"})
-        }
-      })
-      .catch((err)=>{
-        console.log("err2",err)
-         throw{
-            msg:"Failed to register",
-            err:err
-           }
-      })
-     }
- } catch(err){
-    console.log("err",err)
-      return res.status(500).json({success:false,msg:"Unable to register the user",err:err})
-   }
-};
-
-const login = async (req: Request, res: Response, next: NextFunction) => {
+class UserController {
+  public async register(req: Request, res: Response, next: NextFunction) {
     try {
-      User.findOne({ "email.value": await toLowerCase(req.body.email) })
-        .then(async (data: any) => {
-          if (!data) {
-            throw {
-            msg:"User is not registered"
-            };
-          } else if (
-            (await checkPassword(req.body.password, data.password)) !== true
-          ) {
-            throw {
-            msg:"Password is incorrect"
-            };
-          } 
-          else {
-            const payload = {
-              id: data._id,
-            };
-            res.status(200).json({
-              status: true,
-              userStatus: data.status,
-              message:"User Logged In Successfully",
-              token:await createToken(payload),
-              data:data,
-            });
-          }
-        })
-        .catch((err:any) => {
-          res.status(500).json({success:false, message:"Failed to login",err:err});
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ success: false, message: "Email and Password are required" });
+      }
+      const loweredEmail = await Helper.toLowerCase(email);
+      const user = await User.findOne({ "email.value": loweredEmail });
+      if (user) {
+        return res.status(500).json({ success: false, message: "User is already registered" });
+      } else {
+        const hashedPassword = await Helper.hashPassword(password);
+        const newUser = await User.create({
+          "email.value": loweredEmail,
+          password: hashedPassword,
         });
+        if (!newUser) {
+          throw { msg: "Data Not Found" };
+        }
+        return res.status(200).json({ success: true, msg: "User registered successfully" });
+      }
     } catch (err) {
-      res.status(500).json({
-        success:false, message:"Unable to login",err:err});
+      console.log("err", err);
+      return res.status(500).json({ success: false, msg: "Unable to register the user", err });
     }
-  };
-
-const detail = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    User.findOne({
-      _id: new mongoose.Types.ObjectId(req.params.userId),
-      isDeleted: false,
-    })
-      .then(async (data: any) => {
-        if (!data) {
-          throw {
-           msg:"Data not found"
-          };
-        } else {
-          res.status(200).json({
-            success:true,
-            message:"Details got successfully",
-            data:data,
-          });
-        }
-      })
-      .catch((err) => {
-        res.status(500).json({
-          success:false,
-          message:"Failed to get the details", 
-          err:err
-        });
-      });
-  } catch (err) {
-    res.status(500).json({
-      success:false,
-      message:"Failed to get the details", 
-      err:err
-    });
   }
-};
 
-const update = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    User.exists({ _id: req.params.userId, isDeleted: false })
-      .then(async (userData) => {
-        if (!userData) {
-          throw {
-           message:"Data Not Found"
-          };
-        } else {
-          const existingEmail = await User.findOne({
-            "email.value": await toLowerCase(req.body.email),
-            _id: { $nin: [new mongoose.Types.ObjectId(req.params.userId)] },
-          });
-          if (existingEmail) {
-            throw {
-             message:"Email is already taken"
-            };
-          }
-            await User.findOneAndUpdate(
-              {
-                _id: new mongoose.Types.ObjectId(req.params.userId),
-                isDeleted: false
-              },
-              {
-                email: {
-                  value: await toLowerCase(req.body.email),
-                  is_verified: false,
-                }
-              },
-              { new: true }
-            )
-              .then((data) => {
-                if (!data) {
-                  throw {
-                    msg:"Data Not Found"
-                  };
-                } else {
-                  res.status(200).json({
-                   success:true,
-                   message:"Details Updated Successfully"
-                  });
-                }
-              })
-              .catch((err) => {
-                res.status(500).json({
-                 success:true,
-                 message:"Error while updatig the details",
-                 err:err           
-                });
-              });
-           }
-      })
-      .catch((err) => {
-        res.status(500).json({
-          success:true,
-          message:"Error while updatig the details",
-          err:err           
-         });
-      });
-  } catch (err) {
-    res.status(500).json({
-      success:true,
-      message:"Error while updatig the details",
-      err:err           
-     });
-  }
-};
-
-
-const deleteAccount = async (req: any, res: Response, next: NextFunction) => {
-  try {
-    if (!req.body.is_delete) {
-      throw {
-         msg:"Invalid Type"
-      };
-    } else {
-      User.updateOne(
-        {
-          _id:req.params.userId,
-          isDeleted: false,
+  public async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      const loweredEmail = await Helper.toLowerCase(req.body.email);
+      const user = await User.findOne({ "email.value": loweredEmail });
+      if (!user) {
+        throw { msg: "User is not registered" };
+      } else if (!(await Helper.checkPassword(req.body.password, user.password))) {
+        throw { msg: "Password is incorrect" };
+      } else {
+        const payload = { id: user._id };
+        const token = await Helper.createToken(payload);
+        res.status(200).json({
           status: true,
-        },
-        {
-              isDeleted: req.body.is_delete,
-              deletedBy: req.id,
-        }
-      )
-        .then((data) => {
-          if (!data) {
-            throw {
-            msg:"Data Not Found"
-            };
-          } else {
-            res.status(200).json({
-             status:true,
-             msg:"Account Deleted Successfully"
-            });
-          }
-        })
-        .catch((err) => {
-          res.status(500).json({
-           status:false,
-           msg:"Something went wrong"
-          });
+          userStatus: user.status,
+          message: "User Logged In Successfully",
+          token,
+          data: user,
         });
+      }
+    } catch (err) {
+      res.status(500).json({ success: false, message: "Unable to login", err });
     }
-  } catch (err) {
-    res.status(500).json({
-      status:false,
-      msg:"Something wnet wrong",
-      err:err
-    });
   }
-};
 
-const logout = async (req: any, res: Response, next: NextFunction) => {
-  try {
-    User.findOne({
-      _id: new mongoose.Types.ObjectId(req.id),
-      status: true,
-      isDeleted: false,
-    })
-      .then(async (data) => {
-        if (!data) {
-          throw {
-           msg:"Data not found"
-          };
-        } else {
-          await deleteToken(req.token);
-          res.status(200).json({
-            status:true,
-            msg:"Logout Successfully"
-          });
-        }
-      })
-      .catch((err) => {
-        res.status(500).json({
-         status:false,
-         msg:"Something went wrong"
-        });
+  public async detail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = await User.findOne({
+        _id: new mongoose.Types.ObjectId(req.params.userId),
+        isDeleted: false,
       });
-  } catch (err) {
-    res.status(500).json({
-      status:false,
-      msg:"Something went wrong"
-     });
+      if (!user) {
+        throw { msg: "Data not found" };
+      } else {
+        res.status(200).json({
+          success: true,
+          message: "Details retrieved successfully",
+          data: user,
+        });
+      }
+    } catch (err) {
+      res.status(500).json({ success: false, message: "Failed to get the details", err });
+    }
   }
-};
 
-export default {
-  register,
-  login,
-  detail,
-  update,
-  deleteAccount,
-  logout
-};
+  public async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userData = await User.exists({ _id: req.params.userId, isDeleted: false });
+      if (!userData) {
+        throw { message: "Data Not Found" };
+      } else {
+        const loweredEmail = await Helper.toLowerCase(req.body.email);
+        const existingEmail = await User.findOne({
+          "email.value": loweredEmail,
+          _id: { $nin: [new mongoose.Types.ObjectId(req.params.userId)] },
+        });
+        if (existingEmail) {
+          throw { message: "Email is already taken" };
+        }
+        const updatedUser = await User.findOneAndUpdate(
+          {
+            _id: new mongoose.Types.ObjectId(req.params.userId),
+            isDeleted: false,
+          },
+          {
+            email: {
+              value: loweredEmail,
+              is_verified: false,
+            },
+          },
+          { new: true }
+        );
+        if (!updatedUser) {
+          throw { msg: "Data Not Found" };
+        } else {
+          res.status(200).json({ success: true, message: "Details Updated Successfully" });
+        }
+      }
+    } catch (err) {
+      res.status(500).json({ success: false, message: "Error while updating the details", err });
+    }
+  }
+
+  public async deleteAccount(req: any, res: Response, next: NextFunction) {
+    try {
+      if (!req.body.is_delete) {
+        throw { msg: "Invalid Type" };
+      } else {
+        const updated = await User.updateOne(
+          {
+            _id: req.params.userId,
+            isDeleted: false,
+            status: true,
+          },
+          {
+            isDeleted: req.body.is_delete,
+            deletedBy: req.id,
+          }
+        );
+        if (!updated) {
+          throw { msg: "Data Not Found" };
+        } else {
+          res.status(200).json({ status: true, msg: "Account Deleted Successfully" });
+        }
+      }
+    } catch (err) {
+      res.status(500).json({ status: false, msg: "Something went wrong", err });
+    }
+  }
+
+  public async logout(req: any, res: Response, next: NextFunction) {
+    try {
+      const user = await User.findOne({
+        _id: new mongoose.Types.ObjectId(req.id),
+        status: true,
+        isDeleted: false,
+      });
+      if (!user) {
+        throw { msg: "Data not found" };
+      } else {
+        await Helper.deleteToken(req.token);
+        res.status(200).json({ status: true, msg: "Logout Successfully" });
+      }
+    } catch (err) {
+      res.status(500).json({ status: false, msg: "Something went wrong", err });
+    }
+  }
+}
+
+export default new UserController();
