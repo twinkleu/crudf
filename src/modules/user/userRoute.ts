@@ -15,4 +15,8 @@ router.delete(`/delete/:userId`, checkAuth.User, UserController.deleteAccount);
 
 router.delete(`/logout`, checkAuth.User, UserController.logout);
 
+router.post('/forgot-pwd', UserController.forgotPassword)
+
+router.put('/reset-pwd', UserController.resetPassword)
+
 export default router;

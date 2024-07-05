@@ -12,9 +12,24 @@ class Helper {
     return compareSync(password, hash);
   }
 
+  public async minutes(time:any){
+    const prevTime = new Date(time).getTime();
+    const curnTime = new Date().getTime();
+    const minutes = Math.round((curnTime - prevTime) / 1000 / 60);
+    return minutes;
+  }
+
   public async toLowerCase(text: string): Promise<string> {
     return text.toLowerCase();
   }
+  public async randomToken ():Promise<string>{
+    const str = Array.from({ length: 48 }, () =>
+      "0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ".charAt(
+        Math.floor(Math.random() * 62)
+      )
+    ).join("");
+    return str;
+  };
 
   public async createToken(payload: Object): Promise<string | undefined> {
     try {

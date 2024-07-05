@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import User from "../../models/user";
 import Helper from "../../helpers/helper";
+import Mail from "../../helpers/mail"
+import message from "./userConstant"
 
 class UserController {
   public async register(req: Request, res: Response, next: NextFunction) {
@@ -113,7 +115,9 @@ class UserController {
     }
   }
 
+
   public async deleteAccount(req:any, res: Response, next: NextFunction) {
+
     try {
       if (!req.body.is_delete) {
         throw { msg: "Invalid Type" };
@@ -139,6 +143,7 @@ class UserController {
       res.status(500).json({ status: false, msg: "Something went wrong", err });
     }
   }
+
   public async logout(req: any, res: Response, next: NextFunction) {
     try {
       const user = await User.findOne({
@@ -152,6 +157,100 @@ class UserController {
         await Helper.deleteToken(req.token);
         res.status(200).json({ status: true, msg: "Logout Successfully" });
       }
+    } catch (err) {
+      res.status(500).json({ status: false, msg: "Something went wrong", err });
+    }
+  }
+
+public async forgotPassword(req:any,res:Response,next:NextFunction){
+  try {
+    User.findOneAndUpdate(
+      {
+        "email.value": await Helper.toLowerCase(req.body.email),
+      },
+      {
+        verifyToken: await Helper.randomToken(),
+      },
+      {
+        new: true,
+      }
+    )
+      .then(async (data: any) => {
+        if (!data) {
+          throw {
+            message:"Data Not Found"
+          };
+        } else {
+          const payload= {
+            to: data?.email.value,
+            userData:data,
+            title:message.resetPassword,
+            data: `${process.env.RESET_PWD}?token=${data.verifyToken}`,
+              };
+         await Mail.sendMail(payload)
+         res.status(200).json({ success: true, message: "A mail with reset link sent successfully" });
+        }
+      })
+      .catch((err) => {
+        res.status(500).json({ status: false, msg: "Something went wrong", err });
+      });
+  } catch (err) {
+    res.status(500).json({ status: false, msg: "Something went wrong", err });
+  }
+}
+
+
+public async resetPassword(req:any,res:Response,next:NextFunction){
+    try {
+      User.findOne({
+        verifyToken: req.body.verify_token
+      })
+        .then(async (data: any) => {
+          //console.log("data",data)
+          if (!data) {
+            throw {
+              msg:"Invalid Token"
+            };
+          } else if ((await Helper.minutes(data.updatedAt)) >= 10) {
+            throw {
+             msg:"Token Expired"
+            };
+          } else if (
+            (await Helper.checkPassword(req.body.password, data.password)) === true
+          ) {
+            throw {
+              msg:"New Password should be different from your old password"
+            };
+          } else {
+            User.findOneAndUpdate(
+              {
+                verifyToken: req.body.verify_token
+              },
+              {
+                password: await Helper.hashPassword(req.body.password),
+                verifyToken: null,
+              },
+              {
+                new: true,
+              }
+            )
+              .then((data) => {
+                if (!data) {
+                  throw {
+                    msg:"Data not found"
+                  };
+                } else {
+                  res.status(200).json({ status: true, msg: "password changed Successfully" });
+                }
+              })
+              .catch((err) => {
+                res.status(500).json({ status: false, msg: "Something went wrong", err });
+              });
+          }
+        })
+        .catch((err) => {
+          res.status(500).json({ status: false, msg: "Something went wrong", err });
+        });
     } catch (err) {
       res.status(500).json({ status: false, msg: "Something went wrong", err });
     }

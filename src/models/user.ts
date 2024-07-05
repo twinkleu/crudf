@@ -6,6 +6,7 @@ interface IUser extends Document{
     is_verified: boolean;
   };
   password: string;
+  verifyToken:string,
   status: boolean;
   isDeleted: boolean;
   createdBy?: Schema.Types.ObjectId;
@@ -19,6 +20,7 @@ const userSchema = new Schema<IUser>(
       is_verified: { type: Boolean, required: true, default: false },
     },
     password: { type: String, required: true },
+    verifyToken:{type:String},
     status: { type: Boolean, required: true, default: true },
     isDeleted: { type: Boolean, required: true, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
