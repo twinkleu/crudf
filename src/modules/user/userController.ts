@@ -5,6 +5,22 @@ import Helper from "../../helpers/helper";
 import Mail from "../../helpers/mail"
 import message from "./userConstant"
 
+
+interface CustomRequest extends Request {
+  id?: string;
+  token?: string; 
+  // body: {
+  //   email?: string;
+  //   password?: string; 
+  //   is_delete?: boolean; 
+  //   verify_token?: string; 
+  // };
+  // params: {
+  //   userId?: string; 
+  // }
+}
+
+
 class UserController {
   public async register(req: Request, res: Response, next: NextFunction) {
     try {
@@ -116,7 +132,7 @@ class UserController {
   }
 
 
-  public async deleteAccount(req:any, res: Response, next: NextFunction) {
+  public async deleteAccount(req:CustomRequest, res: Response, next: NextFunction) {
 
     try {
       if (!req.body.is_delete) {
@@ -144,8 +160,11 @@ class UserController {
     }
   }
 
-  public async logout(req: any, res: Response, next: NextFunction) {
+  public async logout(req:CustomRequest, res: Response, next: NextFunction) {
     try {
+      if (!req.token) {
+        return res.status(400).json({ status: false, msg: "Token is required" });
+      }
       const user = await User.findOne({
         _id: new mongoose.Types.ObjectId(req.id),
         status: true,
